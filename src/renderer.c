@@ -108,6 +108,8 @@ static void renderer_draw_mesh(mesh_t* mesh)
     vec2_t* texcoords       = mesh->texcoords;
     vec4_t* normals         = mesh->normals;
 
+    rasterizer_set_fragment_shader(shader_fragment);
+
     for (uint32_t i = 0; i < indices_size; i += 3)
     {
         i0 = indices[i + 0];

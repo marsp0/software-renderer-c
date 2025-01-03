@@ -19,6 +19,7 @@
 /********************/
 /* static variables */
 /********************/
+static uint32_t (*fragment_shader)(float, float, float) = NULL;
 
 /********************/
 /* static functions */
@@ -34,6 +35,11 @@ static int32_t edge_check(int32_t x0, int32_t y0,
 /********************/
 /* public functions */
 /********************/
+
+void rasterizer_set_fragment_shader(uint32_t (*shader)(float, float, float))
+{
+    fragment_shader = shader;
+}
 
 void rasterizer_draw_line(vec4_t v0,
                           vec4_t v1,
@@ -173,7 +179,7 @@ void rasterizer_draw_triangle(vec4_t v0,
                 continue;
             }
 
-            uint32_t color = shader_fragment(w0, w1, w2);
+            uint32_t color = fragment_shader(w0, w1, w2);
 
             depthbuffer_set(depthbuffer, (uint32_t)x, (uint32_t)y, depth);
             framebuffer_set(framebuffer, (uint32_t)x, (uint32_t)y, color);
