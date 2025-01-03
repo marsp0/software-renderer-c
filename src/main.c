@@ -4,15 +4,14 @@
 #include "renderer.h"
 #include "rasterizer.h"
 #include "time_utils.h"
+#include "constants.h"
 
 int32_t main()
 {
-    const char* scene   = "/home/martin/Documents/Projects/pbr-software-renderer/assets/waterbottle.glb";
-
     // initialize
     time_init();
     renderer_init();
-    renderer_load(scene);
+    renderer_load(SCENE_FILE);
 
     // run
     renderer_run();
