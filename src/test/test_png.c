@@ -78,7 +78,7 @@ static void test_simple_png(void)
         0xae, 0x42, 0x60, 0x82                              // end chunk crc
     };
 
-    texture_t* tex = parse_png(buffer, sizeof(buffer - 1));
+    texture_t* tex = parse_png_buffer(buffer, sizeof(buffer - 1));
     // baa bbb 
     // baa bab 
     // aab aba 

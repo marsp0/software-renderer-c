@@ -48,14 +48,14 @@ static void renderer_update(input_t input)
 
 // static void renderer_draw_utilities()
 // {
-//     float w         = (float)width;
-//     float h         = (float)height;
+//     float w         = (float)WINDOW_WIDTH;
+//     float h         = (float)WINDOW_HEIGHT;
 //     camera_t* cam   = scene->camera;
 
 //     vec4_t points[4]    = {vec4_new(0.f, 0.f, 0.f),
-//                            vec4_new(1.f, 0.f, 0.f),
-//                            vec4_new(0.f, 1.f, 0.f),
-//                            vec4_new(0.f, 0.f, 1.f)};
+//                            vec4_new(3.f, 0.f, 0.f),
+//                            vec4_new(0.f, 3.f, 0.f),
+//                            vec4_new(0.f, 0.f, 3.f)};
 
 //     uint32_t colors[4] = {0x00000000, 
 //                           0x0000FF00, 
@@ -108,6 +108,7 @@ static void renderer_draw_mesh(mesh_t* mesh)
     vec2_t* texcoords       = mesh->texcoords;
     vec4_t* normals         = mesh->normals;
 
+    rasterizer_set_depth_test(true);
     rasterizer_set_fragment_shader(shader_fragment);
 
     for (uint32_t i = 0; i < indices_size; i += 3)
@@ -165,11 +166,95 @@ static void renderer_draw_mesh(mesh_t* mesh)
     }
 }
 
+static void renderer_draw_skybox(skybox_t* skybox)
+{
+    uint32_t i0;
+    uint32_t i1;
+    uint32_t i2;
+
+    vec4_t v0;
+    vec4_t v1;
+    vec4_t v2;
+
+    vec2_t t0;
+    vec2_t t1;
+    vec2_t t2;
+
+    float w_over_2          = (float)WINDOW_WIDTH * 0.5f;
+    float h_over_2          = (float)WINDOW_HEIGHT * 0.5f;
+
+    camera_t* cam           = scene->camera;
+
+    uint32_t indices_size   = skybox->indices_size;
+    uint32_t* indices       = skybox->indices;
+    vec4_t* vertices        = skybox->vertices;
+    vec2_t* texcoords       = skybox->texcoords;
+
+    rasterizer_set_depth_test(false);
+    rasterizer_set_fragment_shader(shader_fragment_skybox);
+
+    for (uint32_t i = 0; i < indices_size; i += 3)
+    {
+        i0 = indices[i + 0];
+        i1 = indices[i + 1];
+        i2 = indices[i + 2];
+
+        v0 = vertices[i0];
+        v1 = vertices[i1];
+        v2 = vertices[i2];
+
+        t0 = texcoords[i0];
+        t1 = texcoords[i1];
+        t2 = texcoords[i2];
+
+        vec4_t n = vec4_cross(vec4_sub(v1, v0), vec4_sub(v2,v0));
+
+        // backface cull
+        if (vec4_dot(n, cam->forward) < 0.f)
+        {
+            continue;
+        }
+
+        // // set shader utils
+        shader_set_uniforms_skybox(cam,
+                                   skybox->x_positive,
+                                   skybox->x_negative,
+                                   skybox->y_positive,
+                                   skybox->y_negative,
+                                   skybox->z_positive,
+                                   skybox->z_negative,
+                                   v0, v1, v2,
+                                   t0, t1, t2);
+
+        // run vertex shader
+        v0 = shader_vertex_skybox(v0);
+        v1 = shader_vertex_skybox(v1);
+        v2 = shader_vertex_skybox(v2);
+
+        // persp divide
+        v0 = vec4_scale(v0, 1.f / v0.w);
+        v1 = vec4_scale(v1, 1.f / v1.w);
+        v2 = vec4_scale(v2, 1.f / v2.w);
+
+        // viewport transform
+        v0.x = (v0.x + 1.f) * w_over_2;
+        v0.y = (v0.y + 1.f) * h_over_2;
+        v1.x = (v1.x + 1.f) * w_over_2;
+        v1.y = (v1.y + 1.f) * h_over_2;
+        v2.x = (v2.x + 1.f) * w_over_2;
+        v2.y = (v2.y + 1.f) * h_over_2;
+
+        rasterizer_draw_triangle(v0, v1, v2, current, depthbuffer);
+    }
+}
+
 static void renderer_draw()
 {
     // renderer_draw_utilities();
 
-    renderer_draw_mesh(scene->mesh);
+    renderer_draw_skybox(scene->skybox);
+
+    // renderer_draw_mesh(scene->mesh);
 
     display_draw(display, current);
 }

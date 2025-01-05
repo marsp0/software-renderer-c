@@ -18,5 +18,6 @@ typedef struct
     const unsigned char* buffers[MAX_TEXTURE_LOAD_COUNT];
 } texture_batch_info_t;
 
-texture_t*      parse_png(const unsigned char* buffer, uint32_t size);
-texture_batch_t parse_multiple_pngs(texture_batch_info_t info);
+texture_t*      parse_png_buffer(const unsigned char* buffer, uint32_t size);
+texture_batch_t parse_png_buffers(texture_batch_info_t info);
+texture_t*      parse_png_file(const char* file_name);

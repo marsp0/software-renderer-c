@@ -9,6 +9,7 @@
 #include <threads.h>
 
 #include "crc.h"
+#include "../file.h"
 #include "../atomic_types.h"
 
 /*
@@ -624,7 +625,7 @@ static int32_t parse_single_png(void* data)
 
     while (index < info.size)
     {
-        args->batch->textures[index] = parse_png(info.buffers[index], info.buffer_sizes[index]);
+        args->batch->textures[index] = parse_png_buffer(info.buffers[index], info.buffer_sizes[index]);
 
         index = (*args->index)++;
     }
@@ -636,7 +637,7 @@ static int32_t parse_single_png(void* data)
 /* public variables */
 /********************/
 
-texture_t* parse_png(const unsigned char* buf, uint32_t size)
+texture_t* parse_png_buffer(const unsigned char* buf, uint32_t size)
 {
     /* set up static vars */
     src_size = size;
@@ -679,7 +680,17 @@ texture_t* parse_png(const unsigned char* buf, uint32_t size)
     return texture;
 }
 
-texture_batch_t parse_multiple_pngs(texture_batch_info_t info)
+texture_t* parse_png_file(const char* file_name)
+{
+    file_t* file = file_new(file_name);
+
+    texture_t* texture = parse_png_buffer(file->data, file->size);
+
+    file_free(file);
+    return texture;
+}
+
+texture_batch_t parse_png_buffers(texture_batch_info_t info)
 {
     thrd_t threads[MAX_THREAD_COUNT];
     texture_batch_t result  = { 0 };

@@ -29,6 +29,9 @@
 scene_t* scene_new(const char* file_path)
 {
     scene_t* scene = parse_scene(file_path);
+
+    scene->skybox = skybox_new();
+
     return scene;
 }
 
@@ -41,5 +44,6 @@ void scene_free(scene_t* scene)
 {
     mesh_free(scene->mesh);
     camera_free(scene->camera);
+    skybox_free(scene->skybox);
     free(scene);
 }

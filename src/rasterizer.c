@@ -19,7 +19,9 @@
 /********************/
 /* static variables */
 /********************/
+
 static uint32_t (*fragment_shader)(float, float, float) = NULL;
+static bool depth_test = true;
 
 /********************/
 /* static functions */
@@ -39,6 +41,11 @@ static int32_t edge_check(int32_t x0, int32_t y0,
 void rasterizer_set_fragment_shader(uint32_t (*shader)(float, float, float))
 {
     fragment_shader = shader;
+}
+
+void rasterizer_set_depth_test(bool val)
+{
+    depth_test = val;
 }
 
 void rasterizer_draw_line(vec4_t v0,
@@ -125,7 +132,7 @@ void rasterizer_draw_triangle(vec4_t v0,
         v1.z <= 0.f || v1.z > 1.f ||
         v2.z <= 0.f || v2.z > 1.f)
     {
-        return;
+        // return;
     }
 
     int32_t x0 = (int32_t)v0.x;
@@ -174,7 +181,7 @@ void rasterizer_draw_triangle(vec4_t v0,
             // perspective correct interpolation of z
             float depth = w0 * v0.z + w1 * v1.z + w2 * v2.z;
 
-            if (depth < depthbuffer_get(depthbuffer, (uint32_t)x, (uint32_t)y))
+            if (depth_test && depth < depthbuffer_get(depthbuffer, (uint32_t)x, (uint32_t)y))
             {
                 continue;
             }

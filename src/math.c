@@ -261,6 +261,17 @@ vec4_t vec4_pow(vec4_t v, float pow)
     return v;
 }
 
+vec4_t vec4_abs(vec4_t v)
+{
+    vec4_t res;
+
+    res.x = f_abs(v.x);
+    res.y = f_abs(v.y);
+    res.z = f_abs(v.z);
+
+    return res;
+}
+
 vec4_t vec4_negate(vec4_t v)
 {
     return vec4_new(-v.x, -v.y, -v.z);
