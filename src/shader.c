@@ -242,8 +242,8 @@ uint32_t shader_fragment(float w0, float w1, float w2)
     float s             = f_min(t0.x * w0 + t1.x * w1 + t2.x * w2, 1.f);
     float t             = f_min(t0.y * w0 + t1.y * w1 + t2.y * w2, 1.f);
 
-    vec4_t albedo       = vec4_pow(texture_sample(albedo_texture, s, t), gamma_val);
-    vec4_t metallic     = texture_sample(metallic_texture, s, t);
+    vec4_t albedo       = vec4_pow(texture_sample(albedo_texture, s, t, get_texture_filter()), gamma_val);
+    vec4_t metallic     = texture_sample(metallic_texture, s, t, get_texture_filter());
     float rough         = metallic.y;                                       // green channel
     float metal         = metallic.x;                                       // blue channel
     // vec_t o             = vec_from_bgra(sample(tri->occlusion, s, t));
@@ -322,16 +322,16 @@ uint32_t shader_fragment(float w0, float w1, float w2)
 uint32_t shader_fragment_skybox(float w0, float w1, float w2)
 {
 
-    vec4_t pos_w;
-    pos_w               = vec4_scale(v0_w, w0);
-    pos_w               = vec4_add(pos_w, vec4_scale(v1_w, w1));
-    pos_w               = vec4_add(pos_w, vec4_scale(v2_w, w2));
-    pos_w               = vec4_normalize(pos_w);
-
     float sc;
     float tc;
     float ma;
+    vec4_t pos_w;
     texture_t* texture;
+
+    pos_w = vec4_scale(v0_w, w0);
+    pos_w = vec4_add(pos_w, vec4_scale(v1_w, w1));
+    pos_w = vec4_add(pos_w, vec4_scale(v2_w, w2));
+    pos_w = vec4_normalize(pos_w);
 
     // determine major axis
     vec4_t abs_pos = vec4_abs(pos_w);
@@ -339,36 +339,48 @@ uint32_t shader_fragment_skybox(float w0, float w1, float w2)
     if (abs_pos.x > abs_pos.y && abs_pos.x > abs_pos.z)
     {
         // x major
-        sc = pos_w.x > 0.f ? -pos_w.z : pos_w.z;
-        tc = -pos_w.y;
-        ma = pos_w.x;
-        texture = pos_w.x > 0.f ? x_positive : x_negative;
+        sc          = -pos_w.z;
+        tc          = -pos_w.y;
+        ma          = pos_w.x;
+        texture     = x_positive;
+
+        if (pos_w.x < 0.f)
+        {
+            sc      = pos_w.z;
+            texture = x_negative;
+        }
     }
     else if (abs_pos.y > abs_pos.x && abs_pos.y > abs_pos.z)
     {
         // y major
-        sc = pos_w.x;
-        tc = pos_w.y > 0.f ? pos_w.z : -pos_w.z;
-        ma = pos_w.y;
-        texture = pos_w.y > 0.f ? y_positive : y_negative;
+        sc          = pos_w.x;
+        tc          = pos_w.z;
+        ma          = pos_w.y;
+        texture     = y_positive;
+
+        if (pos_w.y < 0.f)
+        {
+            tc      = -pos_w.z;
+            texture = y_negative;
+        }
     }
     else
     {
         // z major
-        sc = pos_w.z > 0.f ? pos_w.x : -pos_w.x;
-        tc = -pos_w.y;
-        ma = pos_w.z;
-        texture = pos_w.z > 0.f ? z_positive : z_negative;
+        sc          = pos_w.x;
+        tc          = -pos_w.y;
+        ma          = pos_w.z;
+        texture     = z_positive;
+
+        if (pos_w.z < 0.f)
+        {
+            sc      = -pos_w.x;
+            texture = z_negative;
+        }
     }
-    
 
     float s = 0.5 * (sc / f_abs(ma) + 1.f);
     float t = 0.5 * (tc / f_abs(ma) + 1.f);
-    
-    // s             = f_min(t0.x * w0 + t1.x * w1 + t2.x * w2, 1.f);
-    // t             = f_min(t0.y * w0 + t1.y * w1 + t2.y * w2, 1.f);
 
-    // TODO: make texture filtering method a parameter of texture_sample
-    //       so we can sample linearly the sky box but bilinearly the mesh textures
-    return vec4_to_bgra(texture_sample(texture, s, t));
+    return vec4_to_bgra(texture_sample(texture, s, t, POINT_SAMPLE));
 }

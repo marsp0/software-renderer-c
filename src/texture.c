@@ -54,22 +54,21 @@ texture_t* texture_new(uint32_t width, uint32_t height, uint32_t stride)
 	return texture;
 }
 
-vec4_t texture_sample(texture_t* texture, float u, float v)
+vec4_t texture_sample(texture_t* texture, float u, float v, texture_filter_e method)
 {
     // this function converts rgba from image to bgra
 
-    float w                 = (float)texture->width;
-    float h                 = (float)texture->height;
-    vec4_t result           = vec4_new(1.f, 0.f, 1.f);
-    texture_filter_e filter = get_texture_filter();
+    float w         = (float)texture->width;
+    float h         = (float)texture->height;
+    vec4_t result   = vec4_new(1.f, 0.f, 1.f);
 
-    if (filter == POINT_SAMPLE)
+    if (method == POINT_SAMPLE)
     {
         uint32_t x = (uint32_t)f_floor(u * w);
         uint32_t y = (uint32_t)f_floor(v * h);
         result = sample(texture, x, y);
     }
-    else if (filter == BILINEAR_SAMPLE)
+    else if (method == BILINEAR_SAMPLE)
     {
         float x = u * w;
         float y = v * h;
