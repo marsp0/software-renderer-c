@@ -11,6 +11,7 @@
 #include "../file.h"
 #include "scene_validator.h"
 #include "json_scene_constants.h"
+#include "../constants.h"
 
 // GLTF 2 specification - https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html
 
@@ -345,7 +346,7 @@ static mesh_t* parse_meshes(const json_t* json, const chunk_t binary)
     batch_info.buffer_sizes[2]      = normal_view.size;
     batch_info.buffer_sizes[3]      = occlusion_view.size;
 
-    texture_batch_t parsed_batch    = parse_multiple_pngs(batch_info);
+    texture_batch_t parsed_batch    = parse_png_buffers(batch_info);
 
     return mesh_new("name", 
                     vertices,
@@ -389,10 +390,10 @@ scene_t* parse_scene(const char* file_path)
     scene->camera   = camera_new(target,
                                  F_PI / 2.f,
                                  0.0,
-                                 0.5f,
-                                 45 * F_PI / 180.f,
-                                 0.1f,
-                                 20.f,
+                                 10.f,
+                                 45.f * F_PI / 180.f,
+                                 NEAR_PLANE,
+                                 FAR_PLANE,
                                  1.3333f);
 
     // free buffers

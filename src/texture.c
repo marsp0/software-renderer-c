@@ -25,6 +25,9 @@
 static vec4_t sample(texture_t* texture, uint32_t x, uint32_t y)
 {
     float w             = (float)texture->width;
+    float h             = (float)texture->height;
+    x                   = u_min(w, u_max(0, x));
+    y                   = u_min(h, u_max(0, y));
     uint32_t stride     = texture->stride;
     unsigned char* data = texture->data;
 
@@ -44,10 +47,10 @@ static vec4_t sample(texture_t* texture, uint32_t x, uint32_t y)
 texture_t* texture_new(uint32_t width, uint32_t height, uint32_t stride)
 {
 	texture_t* texture = malloc(sizeof(texture_t));
-	texture->width = width;
-	texture->height = height;
-	texture->stride = stride;
-	texture->data = malloc(width * height * stride);
+	texture->width     = width;
+	texture->height    = height;
+	texture->stride    = stride;
+	texture->data      = malloc(width * height * stride);
 	return texture;
 }
 

@@ -77,6 +77,7 @@ vec4_t      vec4_cross(vec4_t v1, vec4_t v2);
 vec4_t      vec4_scale(vec4_t v, float scale);
 vec4_t      vec4_scale_with_w(vec4_t v, float scale);
 vec4_t      vec4_pow(vec4_t v, float pow);
+vec4_t      vec4_abs(vec4_t v);
 vec4_t      vec4_negate(vec4_t v);
 vec4_t      vec4_normalize(vec4_t v);
 vec4_t      vec4_hadamard(vec4_t v1, vec4_t v2);

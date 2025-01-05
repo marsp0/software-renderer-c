@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 #include "texture.h"
+#include "constants.h"
 
 /********************
  *  Notes
@@ -27,9 +28,22 @@
 static const float gamma_val        = 2.2f;
 static const float one_over_gamma   = 1.f / gamma_val;
 static camera_t* camera             = NULL;
+static vec4_t cam_w;
+
+// pbr textures
 static texture_t* albedo_texture    = NULL;
 static texture_t* metallic_texture  = NULL;
 static texture_t* normal_texture    = NULL;
+
+// skybox textures
+static texture_t* x_positive        = NULL;
+static texture_t* x_negative        = NULL;
+static texture_t* y_positive        = NULL;
+static texture_t* y_negative        = NULL;
+static texture_t* z_positive        = NULL;
+static texture_t* z_negative        = NULL;
+
+// shared attributes
 static vec4_t v0_w;
 static vec4_t v1_w;
 static vec4_t v2_w;
@@ -39,7 +53,6 @@ static vec2_t t2;
 static vec4_t n0;
 static vec4_t n1;
 static vec4_t n2;
-static vec4_t cam_w;
 
 /********************/
 /* static functions */
@@ -161,6 +174,39 @@ void shader_set_uniforms(camera_t* cam,
 }
 
 
+void shader_set_uniforms_skybox(camera_t* cam,
+                                texture_t* x_pos,
+                                texture_t* x_neg,
+                                texture_t* y_pos,
+                                texture_t* y_neg,
+                                texture_t* z_pos,
+                                texture_t* z_neg,
+                                vec4_t v0,
+                                vec4_t v1,
+                                vec4_t v2,
+                                vec2_t tex_coord0,
+                                vec2_t tex_coord1,
+                                vec2_t tex_coord2)
+{
+    camera = cam;
+    x_positive = x_pos;
+    x_negative = x_neg;
+    y_positive = y_pos;
+    y_negative = y_neg;
+    z_positive = z_pos;
+    z_negative = z_neg;
+
+    t0                  = tex_coord0;
+    t1                  = tex_coord1;
+    t2                  = tex_coord2;
+
+    mat_t M             = mat_new_identity();
+    v0_w                = mat_mul_vec(M, v0);
+    v1_w                = mat_mul_vec(M, v1);
+    v2_w                = mat_mul_vec(M, v2);
+}
+
+
 vec4_t shader_vertex(vec4_t v)
 {
     mat_t M         = mat_new_identity();
@@ -168,6 +214,22 @@ vec4_t shader_vertex(vec4_t v)
     mat_t P         = camera_proj_mat(camera);
     mat_t VM        = mat_mul_mat(V, M);
     mat_t PVM       = mat_mul_mat(P, VM);
+    
+    return mat_mul_vec(PVM, v);
+}
+
+
+vec4_t shader_vertex_skybox(vec4_t v)
+{
+    mat_t M         = mat_new_identity();
+    mat_t V         = camera_view_mat(camera);
+    mat_t P         = camera_proj_mat(camera);
+    mat_t VM        = mat_mul_mat(V, M);
+    mat_t PVM       = mat_mul_mat(P, VM);
+    PVM.data[0][3] = 0.f;
+    PVM.data[1][3] = 0.f;
+    PVM.data[2][3] = 0.f;
+    PVM.data[3][3] = NEAR_PLANE;
     
     return mat_mul_vec(PVM, v);
 }
@@ -250,8 +312,63 @@ uint32_t shader_fragment(float w0, float w1, float w2)
 
     // ambient + gamma correction
 
-    vec4_t ambient      = vec4_scale(albedo, 0.1f);
+    vec4_t ambient      = vec4_scale(albedo, 0.05f);
     vec4_t final        = vec4_pow(vec4_add(col, ambient), one_over_gamma);
 
     return vec4_to_bgra(final);
+}
+
+
+uint32_t shader_fragment_skybox(float w0, float w1, float w2)
+{
+
+    vec4_t pos_w;
+    pos_w               = vec4_scale(v0_w, w0);
+    pos_w               = vec4_add(pos_w, vec4_scale(v1_w, w1));
+    pos_w               = vec4_add(pos_w, vec4_scale(v2_w, w2));
+    pos_w               = vec4_normalize(pos_w);
+
+    float sc;
+    float tc;
+    float ma;
+    texture_t* texture;
+
+    // determine major axis
+    vec4_t abs_pos = vec4_abs(pos_w);
+
+    if (abs_pos.x > abs_pos.y && abs_pos.x > abs_pos.z)
+    {
+        // x major
+        sc = pos_w.x > 0.f ? -pos_w.z : pos_w.z;
+        tc = -pos_w.y;
+        ma = pos_w.x;
+        texture = pos_w.x > 0.f ? x_positive : x_negative;
+    }
+    else if (abs_pos.y > abs_pos.x && abs_pos.y > abs_pos.z)
+    {
+        // y major
+        sc = pos_w.x;
+        tc = pos_w.y > 0.f ? pos_w.z : -pos_w.z;
+        ma = pos_w.y;
+        texture = pos_w.y > 0.f ? y_positive : y_negative;
+    }
+    else
+    {
+        // z major
+        sc = pos_w.z > 0.f ? pos_w.x : -pos_w.x;
+        tc = -pos_w.y;
+        ma = pos_w.z;
+        texture = pos_w.z > 0.f ? z_positive : z_negative;
+    }
+    
+
+    float s = 0.5 * (sc / f_abs(ma) + 1.f);
+    float t = 0.5 * (tc / f_abs(ma) + 1.f);
+    
+    // s             = f_min(t0.x * w0 + t1.x * w1 + t2.x * w2, 1.f);
+    // t             = f_min(t0.y * w0 + t1.y * w1 + t2.y * w2, 1.f);
+
+    // TODO: make texture filtering method a parameter of texture_sample
+    //       so we can sample linearly the sky box but bilinearly the mesh textures
+    return vec4_to_bgra(texture_sample(texture, s, t));
 }
