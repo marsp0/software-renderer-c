@@ -15,6 +15,8 @@
  * - LearnOpengl PBR    - https://learnopengl.com/PBR/Theory
  * - Specular BRDF ref  - http://graphicrants.blogspot.nl/2013/08/specular-brdf-reference.html
  * - Tangent space      - https://learnopengl.com/Advanced-Lighting/Normal-Mapping
+ * - Skybox algorithm   - https://registry.khronos.org/OpenGL/specs/gl/glspec46.core.pdf (Section 8.13)
+ * - attr interpolation - https://registry.khronos.org/OpenGL/specs/gl/glspec46.core.pdf (Section 14.6)
  ********************/
 
 /********************/
@@ -226,21 +228,21 @@ vec4_t shader_vertex_skybox(vec4_t v)
     mat_t P         = camera_proj_mat(camera);
     mat_t VM        = mat_mul_mat(V, M);
     mat_t PVM       = mat_mul_mat(P, VM);
-    PVM.data[0][3] = 0.f;
-    PVM.data[1][3] = 0.f;
-    PVM.data[2][3] = 0.f;
-    PVM.data[3][3] = NEAR_PLANE;
+    // PVM.data[0][3] = 0.f;
+    // PVM.data[1][3] = 0.f;
+    // PVM.data[2][3] = 0.f;
+    // PVM.data[3][3] = NEAR_PLANE;
     
     return mat_mul_vec(PVM, v);
 }
 
 
-uint32_t shader_fragment(float w0, float w1, float w2)
+uint32_t shader_fragment(float w, float w0, float w1, float w2)
 {
     vec4_t one          = vec4_from_scalar(1.f);
 
-    float s             = f_min(t0.x * w0 + t1.x * w1 + t2.x * w2, 1.f);
-    float t             = f_min(t0.y * w0 + t1.y * w1 + t2.y * w2, 1.f);
+    float s             = f_min((t0.x * w0 + t1.x * w1 + t2.x * w2) / w, 1.f);
+    float t             = f_min((t0.y * w0 + t1.y * w1 + t2.y * w2) / w, 1.f);
 
     vec4_t albedo       = vec4_pow(texture_sample(albedo_texture, s, t, get_texture_filter()), gamma_val);
     vec4_t metallic     = texture_sample(metallic_texture, s, t, get_texture_filter());
@@ -272,9 +274,9 @@ uint32_t shader_fragment(float w0, float w1, float w2)
 
     // interpolate per vertex vars
     vec4_t pos_w;
-    pos_w               = vec4_scale(v0_w, w0);
-    pos_w               = vec4_add(pos_w, vec4_scale(v1_w, w1));
-    pos_w               = vec4_add(pos_w, vec4_scale(v2_w, w2));
+    pos_w               = vec4_scale(v0_w, w0 / w);
+    pos_w               = vec4_add(pos_w, vec4_scale(v1_w, w1 / w));
+    pos_w               = vec4_add(pos_w, vec4_scale(v2_w, w2 / w));
 
     vec4_t view_w       = vec4_normalize(vec4_sub(cam_w, pos_w));
     vec4_t light_w      = vec4_normalize(one);
@@ -319,7 +321,7 @@ uint32_t shader_fragment(float w0, float w1, float w2)
 }
 
 
-uint32_t shader_fragment_skybox(float w0, float w1, float w2)
+uint32_t shader_fragment_skybox(float w, float w0, float w1, float w2)
 {
 
     float sc;
@@ -328,10 +330,15 @@ uint32_t shader_fragment_skybox(float w0, float w1, float w2)
     vec4_t pos_w;
     texture_t* texture;
 
-    pos_w = vec4_scale(v0_w, w0);
-    pos_w = vec4_add(pos_w, vec4_scale(v1_w, w1));
-    pos_w = vec4_add(pos_w, vec4_scale(v2_w, w2));
-    pos_w = vec4_normalize(pos_w);
+    pos_w           = vec4_scale(v0_w, w0 / w);
+    pos_w           = vec4_add(pos_w, vec4_scale(v1_w, w1 / w));
+    pos_w           = vec4_add(pos_w, vec4_scale(v2_w, w2 / w));
+    pos_w           = vec4_normalize(pos_w);
+
+    pos_w           = vec4_scale(v0_w, w0);
+    pos_w           = vec4_add(pos_w, vec4_scale(v1_w, w1));
+    pos_w           = vec4_add(pos_w, vec4_scale(v2_w, w2));
+    pos_w           = vec4_normalize(pos_w);
 
     // determine major axis
     vec4_t abs_pos = vec4_abs(pos_w);
@@ -381,6 +388,17 @@ uint32_t shader_fragment_skybox(float w0, float w1, float w2)
 
     float s = 0.5 * (sc / f_abs(ma) + 1.f);
     float t = 0.5 * (tc / f_abs(ma) + 1.f);
+    
+    s             = (t0.x * w0 + t1.x * w1 + t2.x * w2) / w;
+    t             = (t0.y * w0 + t1.y * w1 + t2.y * w2) / w;
+
+    // vec4_t red = vec4_new(0.f, 0.f, 1.f);
+    // vec4_t green = vec4_new(0.f, 1.f, 0.f);
+    // vec4_t blue = vec4_new(1.f, 0.f, 0.f);
+    // float x = (red.x * w2 + green.x * w1 + blue.x * w0) / w;
+    // float y = (red.y * w2 + green.y * w1 + blue.y * w0) / w;
+    // float z = (red.z * w2 + green.z * w1 + blue.z * w0) / w;
+    // return vec4_to_bgra(vec4_new(x, y,z));
 
     return vec4_to_bgra(texture_sample(texture, s, t, POINT_SAMPLE));
 }

@@ -150,9 +150,12 @@ static void renderer_draw_mesh(mesh_t* mesh)
         v2 = shader_vertex(v2);
 
         // persp divide
-        v0 = vec4_scale(v0, 1.f / v0.w);
-        v1 = vec4_scale(v1, 1.f / v1.w);
-        v2 = vec4_scale(v2, 1.f / v2.w);
+        v0.w = 1.f / v0.w;
+        v0 = vec4_scale(v0, v0.w);
+        v1.w = 1.f / v1.w;
+        v1 = vec4_scale(v1, v1.w);
+        v2.w = 1.f / v2.w;
+        v2 = vec4_scale(v2, v2.w);
 
         // viewport transform
         v0.x = (v0.x + 1.f) * w_over_2;
@@ -232,9 +235,12 @@ static void renderer_draw_skybox(skybox_t* skybox)
         v2 = shader_vertex_skybox(v2);
 
         // persp divide
-        v0 = vec4_scale(v0, 1.f / v0.w);
-        v1 = vec4_scale(v1, 1.f / v1.w);
-        v2 = vec4_scale(v2, 1.f / v2.w);
+        v0.w = 1.f / v0.w;
+        v0 = vec4_scale(v0, v0.w);
+        v1.w = 1.f / v1.w;
+        v1 = vec4_scale(v1, v1.w);
+        v2.w = 1.f / v2.w;
+        v2 = vec4_scale(v2, v2.w);
 
         // viewport transform
         v0.x = (v0.x + 1.f) * w_over_2;

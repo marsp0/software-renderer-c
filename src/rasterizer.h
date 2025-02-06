@@ -7,7 +7,7 @@
 #include "framebuffer.h"
 #include "depthbuffer.h"
 
-void rasterizer_set_fragment_shader(uint32_t (*shader)(float, float, float));
+void rasterizer_set_fragment_shader(uint32_t (*shader)(float, float, float, float));
 void rasterizer_set_depth_test(bool val);
 void rasterizer_draw_line(vec4_t p0,
                           vec4_t p1,
