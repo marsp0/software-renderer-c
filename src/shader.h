@@ -34,5 +34,5 @@ void        shader_set_uniforms_skybox(camera_t* cam,
 
 vec4_t      shader_vertex_skybox(vec4_t v);
 vec4_t      shader_vertex(vec4_t v);
-uint32_t    shader_fragment(float w0, float w1, float w2);
-uint32_t    shader_fragment_skybox(float w0, float w1, float w2);
+uint32_t    shader_fragment(float w, float w0, float w1, float w2);
+uint32_t    shader_fragment_skybox(float w, float w0, float w1, float w2);

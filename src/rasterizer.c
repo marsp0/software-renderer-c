@@ -20,8 +20,8 @@
 /* static variables */
 /********************/
 
-static uint32_t (*fragment_shader)(float, float, float) = NULL;
-static bool depth_test = true;
+static uint32_t (*fragment_shader)(float, float, float, float)  = NULL;
+static bool depth_test                                          = true;
 
 /********************/
 /* static functions */
@@ -31,14 +31,14 @@ static int32_t edge_check(int32_t x0, int32_t y0,
                           int32_t x1, int32_t y1, 
                           int32_t x2, int32_t y2)
 {
-    return (x2 - x0) * (y1 - y0) - (x1 - x0) * (y2 - y0);
+    return (x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0);
 }
 
 /********************/
 /* public functions */
 /********************/
 
-void rasterizer_set_fragment_shader(uint32_t (*shader)(float, float, float))
+void rasterizer_set_fragment_shader(uint32_t (*shader)(float, float, float, float))
 {
     fragment_shader = shader;
 }
@@ -168,7 +168,7 @@ void rasterizer_draw_triangle(vec4_t v0,
             float w1 = (float)edge_check(x2, y2, x0, y0, x, y);
             float w2 = (float)edge_check(x0, y0, x1, y1, x, y);
 
-            if (w0 > 0 || w1 > 0 || w2 > 0)
+            if (w0 < 0.f || w1 < 0.f || w2 < 0.f)
             {
                 continue;
             }
