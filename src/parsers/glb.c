@@ -390,7 +390,7 @@ scene_t* parse_scene(const char* file_path)
     scene->camera   = camera_new(target,
                                  F_PI / 2.f,
                                  0.0,
-                                 10.f,
+                                 1.f,
                                  45.f * F_PI / 180.f,
                                  NEAR_PLANE,
                                  FAR_PLANE,
