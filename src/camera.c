@@ -212,13 +212,13 @@ mat_t camera_proj_mat(camera_t* cam)
     float n_over_r  = cam->n_dist / cam->r_dist;
     float n_over_t  = cam->n_dist / cam->t_dist;
     float f_min_n   = cam->f_dist - cam->n_dist;
-    float n         = cam->n_dist;
+    float f_plus_n  = cam->f_dist + cam->n_dist;
     float fn        = cam->n_dist * cam->f_dist;
 
     result.data[0][0] = n_over_r;
     result.data[1][1] = n_over_t;
-    result.data[2][2] = n / f_min_n;
-    result.data[2][3] = fn / f_min_n;
+    result.data[2][2] = -f_plus_n / f_min_n;
+    result.data[2][3] = -2.f * fn / f_min_n;
     result.data[3][2] = -1.f;
     result.data[3][3] = 0.f;
 

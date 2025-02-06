@@ -181,12 +181,17 @@ void rasterizer_draw_triangle(vec4_t v0,
             // perspective correct interpolation of z
             float depth = w0 * v0.z + w1 * v1.z + w2 * v2.z;
 
-            if (depth_test && depth < depthbuffer_get(depthbuffer, (uint32_t)x, (uint32_t)y))
+            if (depth_test && depth > depthbuffer_get(depthbuffer, (uint32_t)x, (uint32_t)y))
             {
                 continue;
             }
 
-            uint32_t color = fragment_shader(w0, w1, w2);
+            w0 = w0 * v0.w;
+            w1 = w1 * v1.w;
+            w2 = w2 * v2.w;
+
+            float w         = w0 + w1 + w2;
+            uint32_t color  = fragment_shader(w, w0, w1, w2);
 
             depthbuffer_set(depthbuffer, (uint32_t)x, (uint32_t)y, depth);
             framebuffer_set(framebuffer, (uint32_t)x, (uint32_t)y, color);
